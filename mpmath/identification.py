@@ -245,6 +245,9 @@ def pslq(ctx, x, tol=None, maxcoeff=1000, maxsteps=100, verbose=False, outputdic
         for i in xrange(1,n+1): H[m,i], H[m+1,i] = H[m+1,i], H[m,i]
         for i in xrange(1,n+1): A[m,i], A[m+1,i] = A[m+1,i], A[m,i]
         for i in xrange(1,n+1): B[i,m], B[i,m+1] = B[i,m+1], B[i,m]
+        outputdict["A_InnerLoop_Step2_{0}".format(REP)]=A
+        outputdict["B_InnerLoop_Step2_{0}".format(REP)]=B
+        outputdict["H_InnerLoop_Step2_{0}".format(REP)]=H
         # Step 3
         if m <= n - 2:
             t0 = sqrt_fixed((H[m,m]**2 + H[m,m+1]**2)>>prec, prec)
@@ -260,7 +263,7 @@ def pslq(ctx, x, tol=None, maxcoeff=1000, maxsteps=100, verbose=False, outputdic
                 t4 = H[i,m+1]
                 H[i,m] = (t1*t3+t2*t4) >> prec
                 H[i,m+1] = (-t2*t3+t1*t4) >> prec
-         outputdict["H_InnerLoop_{0}".format(REP)]=H
+        outputdict["H_InnerLoop_{0}".format(REP)]=H
 
         # Step 4
         for i in xrange(m+1, n+1):
