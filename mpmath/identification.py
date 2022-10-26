@@ -14,7 +14,7 @@ class IdentificationMethods(object):
     pass
 
 
-def pslq(ctx, x, tol=None, maxcoeff=1000, maxsteps=100, verbose=False):
+def pslq(ctx, x, tol=None, maxcoeff=1000, maxsteps=100, verbose=False, outputdict=None):
     r"""
     Given a vector of real numbers `x = [x_0, x_1, ..., x_n]`, ``pslq(x)``
     uses the PSLQ algorithm to find a list of integers
@@ -142,7 +142,9 @@ def pslq(ctx, x, tol=None, maxcoeff=1000, maxsteps=100, verbose=False):
         print("Warning: precision for PSLQ may be too low")
 
     target = int(prec * 0.75)
-
+    if outputdict is None:
+        outputdict = dict()	
+        
     if tol is None:
         tol = ctx.mpf(2)**(-target)
     else:
@@ -209,6 +211,7 @@ def pslq(ctx, x, tol=None, maxcoeff=1000, maxsteps=100, verbose=False):
                 H[i,j] = ((-y[i]*y[j])<<prec)//sjj1
             else:
                 H[i,j] = 0
+    outputdict["H_step3"]=H
     # step 4
     for i in xrange(2, n+1):
         for j in xrange(i-1, 0, -1):
@@ -224,6 +227,8 @@ def pslq(ctx, x, tol=None, maxcoeff=1000, maxsteps=100, verbose=False):
             for k in xrange(1, n+1):
                 A[i,k] = A[i,k] - (t*A[j,k] >> prec)
                 B[k,j] = B[k,j] + (t*B[k,i] >> prec)
+    outputdict["A_Step4"]=A
+    outputdict["B_Step4"]=B
     # Main algorithm
     for REP in range(maxsteps):
         # Step 1
@@ -255,6 +260,8 @@ def pslq(ctx, x, tol=None, maxcoeff=1000, maxsteps=100, verbose=False):
                 t4 = H[i,m+1]
                 H[i,m] = (t1*t3+t2*t4) >> prec
                 H[i,m+1] = (-t2*t3+t1*t4) >> prec
+         outputdict["H_InnerLoop_{0}".format(REP)]=H
+
         # Step 4
         for i in xrange(m+1, n+1):
             for j in xrange(min(i-1, m+1), 0, -1):
@@ -269,6 +276,10 @@ def pslq(ctx, x, tol=None, maxcoeff=1000, maxsteps=100, verbose=False):
                 for k in xrange(1, n+1):
                     A[i,k] = A[i,k] - (t*A[j,k] >> prec)
                     B[k,j] = B[k,j] + (t*B[k,i] >> prec)
+        outputdict["A_InnerLoop_{0}".format(REP)]=A
+        outputdict["B_InnerLoop_{0}".format(REP)]=B
+        
+
         # Until a relation is found, the error typically decreases
         # slowly (e.g. a factor 1-10) with each step TODO: we could
         # compare err from two successive iterations. If there is a
@@ -293,6 +304,8 @@ def pslq(ctx, x, tol=None, maxcoeff=1000, maxsteps=100, verbose=False):
         # more exactly (using the Euclidean norm) but there is probably
         # no practical benefit.
         recnorm = max(abs(h) for h in H.values())
+        outputdict["recnorm_{0}".format(REP)]=recnorm
+        
         if recnorm:
             norm = ((1 << (2*prec)) // recnorm) >> prec
             norm //= 100
